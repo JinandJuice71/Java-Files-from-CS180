@@ -1,0 +1,248 @@
+import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Arrays;
+import java.util.stream.Stream;
+
+/**
+ * A MP3 Server for sending mp3 files over a socket connection.
+ *
+ * @author Luke Lavin <llavin@purdue.edu>
+ * @version March 9th, 2019
+ */
+
+public class MP3Server {
+
+    //private static ServerSocket ss; //static ServerSocket variable
+    //private static int port = 9478; //socket server port on which it will listen
+
+    public static void main(String[] args) throws IOException {
+        //MP3Server server = new MP3Server(9478);
+        ServerSocket serverSocket = new ServerSocket(9478);
+
+        Socket clientSocket;
+        ClientHandler requestHandler;
+
+        System.out.println("<Starting the server>");
+
+        //Socket socket = serverSocket.accept();
+        //System.out.println("Accepted connection : " + socket);
+
+        while (true) {
+            try {
+                clientSocket = serverSocket.accept();
+            } catch (IOException e) {
+                System.out.println("<An unexpected exception occurred>");
+
+                System.out.printf("<Exception message: %s>\n", e.getMessage());
+
+                System.out.println("<Stopping the server>");
+
+                try {
+                    serverSocket.close();
+                } catch (IOException i) {
+                    i.printStackTrace();
+                } //end try catch
+                return;
+            } //end try catch
+
+            System.out.println("<Connected to a client>");
+
+            requestHandler = new ClientHandler(clientSocket);
+
+            new Thread(requestHandler).start();
+
+        }
+    }
+}
+
+final class ClientHandler implements Runnable {
+    private ObjectInputStream inputStream;
+    private ObjectOutputStream outputStream;
+
+    public ClientHandler(Socket clientSocket) throws IllegalArgumentException, IOException {
+        this.inputStream = inputStream;
+        this.outputStream = outputStream; //TODO: IS THIS RIGHT???
+    } //ClientHandler
+
+    public void run() {
+
+        //TODO: Implement, remember to listen for the client's input indefinitely!
+
+//TODO: WAIT FOR client to send a SongRequest into the input stream.
+        //TODO: DETERMINE NAME FROM THIS SONGREQUEST
+
+        int fileSize = -1;
+
+        try {
+            InputStreamReader isr = new InputStreamReader(inputStream);
+            BufferedReader br = new BufferedReader(isr);
+            String str = br.readLine(); //set up input
+
+            OutputStreamWriter osw = new OutputStreamWriter(outputStream);
+            BufferedWriter bw = new BufferedWriter(osw); //set up output
+
+            //String name = str.split("= ")[1]; //fetched the name from the input
+
+
+            //check record text file for this filename
+
+            //TODO: IF THIS IS A DOWNLOAD REQUEST:
+
+
+
+
+            if (fileInRecord(str) != true) {
+                SongHeaderMessage shm = new SongHeaderMessage();
+                shm.setFileSize(-1);
+                bw.write(shm); //TODO: AM I SUPPOSED TO WRITE a SongHeaderMessage class?
+            } else {
+                String artist = str.split(" = ")[0];
+                String nameWithMP3 = str.split(" = ")[1]; //fetched the name.mp3 from the input
+                String name = nameWithMP3.split(".mp3")[0]; //got rid of ".mp3" at the end to get true name
+
+                SongHeaderMessage shm = new SongHeaderMessage(true, name, artist, fileSize);
+                bw.write(shm); //TODO: AM I SUPPOSED TO WRITE a SongHeaderMessage class?
+                readSongData(songDatabase folder); //TODO: FIND THE RIGHT DIRECTORY
+                sendByteArray(); //TODO: WHAT TO PUT IN HERE
+            }
+
+            //todo: if this is not a download request:
+
+
+
+            if (inputStream.equals(false)) {
+                System.out.println("false input stream");
+                SongHeaderMessage shm = new SongHeaderMessage(false);
+                bw.write(shm);
+                //TODO: SEND Shm
+                sendRecordData();
+            }
+
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+//        finally {
+//            try
+//            {
+//                clientSocket.close();
+//            } catch (Exception e) {
+//                e.getMessage();
+//            }
+    }
+
+    /**
+     * Searches the record file for the given filename.
+     *
+     * @param fileName the fileName to search for in the record file
+     * @return true if the fileName is present in the record file, false if the fileName is not
+     */
+    private static boolean fileInRecord(String fileName) throws IOException{
+        FileReader fr  = new FileReader("record.txt");
+        BufferedReader in = new BufferedReader(fr);
+        String newString = "";
+        String i = in.readLine();
+        boolean match = false;
+
+        try {
+            while (i != null) {
+                newString = newString + i;
+                i = in.readLine();
+
+                int result = (fileName.compareTo(newString)); //if result is 0, comparison is true. if result != 0, comparison is false.
+                if (result == 1) {
+                    match = true;
+                } else match = false;
+            } fr.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return match;
+    }
+    /**
+     * Read the bytes of a file with the given name into a byte array.
+     *
+     * @param fileName the name of the file to read
+     * @return the byte array containing all bytes of the file, or null if an error occurred
+     */
+    private static byte[] readSongData(String fileName)  {
+
+        File file = new File (str); //TODO: HOW TO CHOOSE MP3 FILE WITH THE STR NAME?
+
+        FileInputStream fileInputStream = null;
+        byte[] bFile = new byte[(int) file.length()];
+        try
+        {
+            //convert file into array of bytes
+            fileInputStream = new FileInputStream(file);
+            fileInputStream.read(bFile);
+            fileInputStream.close();
+            for (int i = 0; i < bFile.length; i++)
+            {
+                System.out.print((char) bFile[i]);
+            }
+            fileSize = bFile.length;
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        return bFile;
+    }
+
+    /**
+     * Split the given byte array into smaller arrays of size 1000, and send the smaller arrays
+     * to the client using SongDataMessages.
+     *
+     * @param songData the byte array to send to the client
+     */
+    private void sendByteArray(byte[][] songData) {
+        byte[] a = readSongData("record.txt");
+        int byteArrayLength = a.length;
+        int chunkSize = 1000;
+
+        songData = new byte[(byteArrayLength + chunkSize - 1)/chunkSize][];
+        int destIndex = 0;
+        int stopIndex = 0;
+
+        for (int startIndex = 0; startIndex + chunkSize <= byteArrayLength; startIndex += chunkSize)
+        {
+            stopIndex += chunkSize;
+            songData[destIndex++] = Arrays.copyOfRange(a, startIndex, stopIndex);
+        }
+
+        if (stopIndex < byteArrayLength)
+            songData[destIndex] = Arrays.copyOfRange(a, stopIndex, byteArrayLength);
+
+        //TODO: send the smaller byte arrays to the client in SongDataMessages.
+    }
+
+    /**
+     * Read ''record.txt'' line by line again, this time formatting each line in a readable
+     * format, and sending it to the client. Send a ''null'' value to the client when done, to
+     * signal to the client that you've finished sending the record data.
+     */
+    private void sendRecordData() throws IOException {
+        // TODO: Implement sendRecordData
+        FileReader fr  = new FileReader("record.txt");
+        BufferedReader in = new BufferedReader(fr);
+        String newString = "";
+        String i = in.readLine();
+
+        OutputStream os = clientSocket.getOutputStream(); //TODO: MERGE WITH CLIENT
+        OutputStreamWriter osw = new OutputStreamWriter(os);
+        BufferedWriter out = new BufferedWriter(osw);
+
+        while (i != null) {
+            newString = newString + i;
+            i = in.readLine();
+            String songTitleArray[] = newString.split(" - ");
+            String newerString = songTitleArray[1] + " " + songTitleArray[0];
+            out.write(newerString);
+        } fr.close();
+
+        //return newString;
+    }
+}

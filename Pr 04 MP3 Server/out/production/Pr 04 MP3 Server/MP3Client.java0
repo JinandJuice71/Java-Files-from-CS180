@@ -1,0 +1,46 @@
+import java.io.*;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.util.Scanner;
+
+/**
+ * An MP3 Client to request .mp3 files from a server and receive them over the socket connection.
+ *
+ * @author Luke Lavin <llavin@purdue.edu>
+ * @version March 9th, 2019
+ */
+public class MP3Client {
+    public static void main(String[] args) {
+        //TODO: Implement Connecting to server
+    }
+}
+
+final class ResponseListener implements Runnable {
+    private ObjectInputStream ois;
+
+    public ResponseListener(Socket clientSocket) {
+       //TODO: Implement Constructor
+    }
+
+    /**
+     * Listens for a response from the server.
+     * <p>
+     * Continuously tries to read a SongHeaderMessage. Gets the artist name, song name, and file size from that header,
+     * and if the file size is not -1, that means the file exists. If the file does exist, the method then subsequently
+     * waits for a series of SongDataMessages, takes the byte data from those data messages and writes it into a
+     * properly named file.
+     */
+    public void run() {
+        //TODO: Implement run
+    }
+
+    /**
+     * Writes the given array of bytes to a file whose name is given by the fileName argument.
+     *
+     * @param songBytes the byte array to be written
+     * @param fileName  the name of the file to which the bytes will be written
+     */
+    private void writeByteArrayToFile(byte[] songBytes, String fileName) {
+        //TODO: Implement
+    }
+}
